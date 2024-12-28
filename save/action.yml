@@ -1,0 +1,22 @@
+name: 'Local Cache Save on Self-hosted Runner'
+description: 'Cache dependencies and build outputs to improve workflow execution time on self hosted machine'
+inputs:
+  path:
+    description: 'A directory to save cache.'
+    required: true
+  key:
+    description: 'An explicit key for a cache.'
+    required: true
+  base:
+    description: 'A base directory to save cache.'
+    required: true
+  rsync:
+    description: 'Use rsync to save cache.'
+    required: false
+
+runs:
+  using: 'node20'
+  main: '../dist/save/index.js'
+branding:
+  icon: 'archive'
+  color: 'gray-dark'

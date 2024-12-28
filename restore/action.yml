@@ -1,0 +1,33 @@
+name: 'Local Cache Restore on Self-hosted Runner'
+description: 'Cache dependencies and build outputs to improve workflow execution time on self hosted machine'
+inputs:
+  path:
+    description: 'A directory to restore cache.'
+    required: true
+  key:
+    description: 'An explicit key for a cache.'
+    required: true
+  base:
+    description: 'A base directory to restore cache.'
+    required: true
+  rsync:
+    description: 'Use rsync to restore cache.'
+    required: false
+  clean-key:
+    description: 'If set, caches are cleaned up automatically.'
+    required: false
+outputs:
+  cache-hit:
+    description: 'Cache hit or not'
+  cache-key:
+    description: 'Cache key'
+  cache-base:
+    description: 'Cache base'
+  cache-path:
+    description: 'Cache path'
+runs:
+  using: 'node20'
+  main: '../dist/restore/index.js'
+branding:
+  icon: 'archive'
+  color: 'gray-dark'

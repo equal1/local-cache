@@ -1,25 +1,43 @@
 import * as core from '@actions/core'
-import {exec} from '../utils/cache'
+import * as p from 'path'
+import {
+  exec, sanitizeString,
+  sanitizePath, checkKey, checkPaths,
+  getCacheBase, getCachePath
+} from '../utils/cache'
 
 async function run(): Promise<void> {
   try {
-    const cacheHit = core.getState('cache-hit')
-    const key = core.getState('key')
+    const key = sanitizeString(core.getInput('key'))
+    const base = sanitizePath(core.getInput('base'))
+    const path = sanitizePath(core.getInput('path'))
+    const rsync = core.getInput('rsync') === 'true'
 
-    if (cacheHit === 'false') {
-      const cachePath = core.getState('cache-path')
-      const path = core.getState('path')
+    core.info(`Key: ${key}`)
+    core.info(`Base: ${base}`)
+    core.info(`Path: ${path}`)
 
-      await exec(`mkdir -p ${cachePath}`)
-      const mv = await exec(`mv ./${path} ${cachePath}`)
+    checkKey(key)
+    checkPaths([path])
 
-      core.debug(mv.stdout)
-      if (mv.stderr) core.error(mv.stderr)
-      if (!mv.stderr) core.info(`Cache saved with key ${key}`)
+    const cachePath = getCachePath(key, getCacheBase(base))
+
+    let cp = null
+    if (!rsync) {
+      await exec(`rm -rf "${cachePath}"`)
+      await exec(`mkdir -p "${cachePath}"`)
+      cp = await exec(`cp -rf "${path}" -t "${cachePath}"`)
     } else {
-      core.info(`Cache hit on the key ${key}`)
-      core.info(`,not saving cache`)
+      await exec(`mkdir -p "${cachePath}"`)
+      cp = await exec(
+        `rsync --archive --recursive --delete --quiet ` +
+        `"${path}/" "${p.join(cachePath, path.split('/').slice(-1)[0])}/"`
+      )
     }
+
+    core.debug(cp.stdout)
+    if (cp.stderr) core.error(cp.stderr)
+    if (!cp.stderr) core.info(`Cache saved with key ${key}`)
 
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
